@@ -717,6 +717,7 @@ def get_xception_encoder(input_height=224, input_width=224, depth=3, filter_size
     x = Activation('relu', name='block14_sepconv2_act')(x)
     f5 = x
 
+    pooling = None
     if pooling == 'avg':
         x = GlobalAveragePooling2D()(x)
     elif pooling == 'max':
@@ -774,6 +775,8 @@ def get_nasnet_encoder(input_height=224, input_width=224, depth=3, filter_size =
 
     x = Activation('relu')(x)
     f5 = x
+
+    pooling = None
     if pooling == 'avg':
         x = GlobalAveragePooling2D()(x)
     elif pooling == 'max':
@@ -903,6 +906,7 @@ def get_densenet121_encoder(input_height=224, input_width=224, depth=3, filter_s
     x = Activation('relu', name='relu')(x)
     f5 = x
 
+    pooling = None
     if pooling == 'avg':
         x = GlobalAveragePooling2D(name='avg_pool')(x)
     elif pooling == 'max':

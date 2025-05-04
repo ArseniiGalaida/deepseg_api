@@ -37,10 +37,10 @@ config = dict()
 
 ####### These variables should be modified to your local path #######
 # dataset paths
-config['brats_path'] = '/PATH/TO/MICCAI_BraTS_2019_Data_Training/' # path to the original BraTS 2019
-config['preprocessed_brats'] = '/PATH/TO/BraTS19_train_preprocessed/' # path to the output preprocessed BraTS 2019 (after preprocess.py)
-config['preprocessed_brats_imgs'] = '/PATH/TO/BraTS19_train_images/' # path to the output preprocessed 2D images (after preprocess_2d_images.py)
-config['dataset_path'] = '/PATH/TO/dataset_brats19/' # path to the dataset containing 2d images (train_images, train_segmentation, ... etc)
+config['brats_path'] = 'input/'
+config['preprocessed_brats'] = 'preprocessed/'
+config['preprocessed_brats_imgs'] = 'preprocessed_2d/'
+config['dataset_path'] = 'dataset/'
 #####################################################################
 
 # model configuration
@@ -54,7 +54,7 @@ config['n_modalities'] = len(config['train_modality'])
 config['label_type'] = '_complete/' # _complete, _core, _enhancing, _l1, _l2, _l3
 config['train_label'] = 'truth' + config['label_type']
 
-config['classes'] = [0,1] # 0 for the background, 1 for the tumor
+config['classes'] = [0, 1]
 config['n_classes'] = len(config['classes'])
 # default value for one modality is 3, otherwise equals the number of modalities
 config['model_depth'] = 3 if config['n_modalities']==1 else config['n_modalities']
@@ -91,8 +91,8 @@ config['input_width'] = 224
 config['output_height'] = 224
 config['output_width'] = 224
 config['epochs'] = 35	# number of training epochs
-config['load_model'] = True # continue training from a saved checkpoint
-config['load_model_path'] = "paper_weights/"+config['encoder_name']+"_"+config['decoder_name']+".hdf5" # specifiy the loaded model path or None
+config['load_model'] = True
+config['load_model_path'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "paper_weights", config['encoder_name']+"_"+config['decoder_name']+".hdf5")
 
 config['model_num'] = '20' # load model by the number of training epoch if config['load_model_path'] = None
 config['initial_epoch'] = config['model_num'] if config['load_model'] else 0  # continue training
@@ -119,8 +119,8 @@ config['random_order'] = True # apply augmenters in random order
 # prediction and evaluation
 config['sample_output'] = False # show a sample output from brats_19
 config['sample_path'] = 'BraTS19_TCIA10_408_1-66'
-config['pred_path'] = 'preds/' + config['project_name'] + '/'
-config['evaluate_path'] = 'evaluations/' # + config['project_name'] + '/'
+config['pred_path'] = 'output/'
+config['evaluate_path'] = 'evaluations/'
 config['evaluate_val'] = False # evaluate the entire validation set
 config['evaluate_val_nifti'] = True # evaluate the validation set as nifti images
 config['evaluate_keras'] = False # evaluate using keras evaluate_generator()
@@ -146,6 +146,12 @@ if not os.path.exists(config['evaluate_path']):
 if not os.path.exists(config['pred_path_nifti_240']):
     os.makedirs(config['pred_path_nifti_240'])
 
+for path in [config['brats_path'], config['preprocessed_brats'], 
+            config['preprocessed_brats_imgs'], config['dataset_path'],
+            config['pred_path'], config['evaluate_path']]:
+    if not os.path.exists(path):
+        os.makedirs(path)
+
 # print configs
 print("\n\n####################################################################")
 print("Please cite the following paper when using DeepSeg :")
@@ -161,14 +167,18 @@ print("Training batch size:", config['batch_size'])
 print("Validation batch size:", config['val_batch_size'])
 print("####################################################################\n\n")
 
-
-# limit the GPU usage
+import os
 import tensorflow as tf
-from keras.backend.tensorflow_backend import set_session
 
-gpu_id = 0 # for multi-gpu environment
+# Set visible GPU
+gpu_id = 0
 os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-gpu_config = tf.ConfigProto(allow_soft_placement=True)
-gpu_config.gpu_options.allow_growth = True
-set_session(tf.Session(config=gpu_config))
 
+# Enable memory growth
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        tf.config.experimental.set_memory_growth(gpus[0], True)
+        print("Memory growth enabled on GPU:", gpus[0])
+    except RuntimeError as e:
+        print(e)
