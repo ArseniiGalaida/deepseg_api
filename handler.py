@@ -1,48 +1,53 @@
-import os
-import uuid
-import subprocess
-import base64
 import runpod
+import base64
+import os
+import tempfile
+from process_nifti import process_nifti_file
 
-
-def run(job):
-
-    uid = str(uuid.uuid4())
-    temp_dir = "/tmp"
-    input_path = os.path.join(temp_dir, f"{uid}_input.nii.gz")
-    output_path = os.path.join(temp_dir, f"{uid}_output.nii.gz")
-
-    with open(input_path, "wb") as f:
-        f.write(base64.b64decode(job["input"]["file_data"]))
-
+def handler(job):
+    """
+    Обработчик для RunPod
+    
+    Args:
+        job (dict): Словарь с входными данными
+            - input (dict): Входные данные
+                - file_data (str): Base64-encoded файл
+                - filename (str): Имя файла
+    """
     try:
-        result = subprocess.run(
-            ["python", "process_nifti.py", "--i", input_path, "--o", output_path],
-            check=False,
-            capture_output=True,
-            text=True
-        )
-
-        if result.returncode != 0:
+        # Получаем входные данные
+        input_data = job["input"]
+        file_data = input_data["file_data"]
+        filename = input_data["filename"]
+        
+        # Создаем временную директорию
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Сохраняем входной файл
+            input_path = os.path.join(temp_dir, filename)
+            with open(input_path, "wb") as f:
+                f.write(base64.b64decode(file_data))
+            
+            # Создаем путь для выходного файла
+            output_filename = f"seg_{filename}"
+            output_path = os.path.join(temp_dir, output_filename)
+            
+            # Обрабатываем файл
+            process_nifti_file(input_path, output_path)
+            
+            # Читаем результат
+            with open(output_path, "rb") as f:
+                result_data = base64.b64encode(f.read()).decode('utf-8')
+            
             return {
-                "error": f"Prediction failed with code {result.returncode}",
-                "stdout": result.stdout,
-                "stderr": result.stderr
+                "output": {
+                    "file_data": result_data,
+                    "filename": output_filename
+                }
             }
-    except subprocess.CalledProcessError as e:
-        return {"error": f"Prediction failed: {str(e)}"}
+            
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
 
-    with open(output_path, "rb") as f:
-        result_data = base64.b64encode(f.read()).decode("utf-8")
-
-    os.remove(input_path)
-    os.remove(output_path)
-
-    return {
-        "file_name": "segmented.nii.gz",
-        "file_data": result_data
-    }
-
-
-if __name__ == '__main__':
-    runpod.serverless.start({'handler': run})
+runpod.serverless.start({"handler": handler})
