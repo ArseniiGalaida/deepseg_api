@@ -61,10 +61,17 @@ def process_nifti_file(input_path, output_path):
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description='Processing with DeepSeg')
-    parser.add_argument('--i', help='Input NIfTI file path')
-    parser.add_argument('--o', help='File for saving segmented NIfTI')
+    if __name__ == "__main__":
+        parser = ArgumentParser(description='Processing with DeepSeg')
+        parser.add_argument('--i', help='Input NIfTI file path')
+        parser.add_argument('--o', help='File for saving segmented NIfTI')
+        args = parser.parse_args()
 
-    args = parser.parse_args()
+        try:
+            process_nifti_file(args.i, args.o)
+        except Exception as e:
+            import traceback
 
-    process_nifti_file(args.i, args.o)
+            print("[ERROR] Exception during processing:")
+            traceback.print_exc()
+            raise e

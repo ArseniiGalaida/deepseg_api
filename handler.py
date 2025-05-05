@@ -16,11 +16,19 @@ def run(job):
         f.write(base64.b64decode(job["input"]["file_data"]))
 
     try:
-        subprocess.run([
-            "python", "process_nifti.py",
-            "--i", input_path,
-            "--o", output_path
-        ], check=True)
+        result = subprocess.run(
+            ["python", "process_nifti.py", "--i", input_path, "--o", output_path],
+            check=False,
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode != 0:
+            return {
+                "error": f"Prediction failed with code {result.returncode}",
+                "stdout": result.stdout,
+                "stderr": result.stderr
+            }
     except subprocess.CalledProcessError as e:
         return {"error": f"Prediction failed: {str(e)}"}
 
