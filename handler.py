@@ -7,7 +7,7 @@ from process_nifti import process_nifti_file
 def handler(job):
     try:
         input_data = job["input"]
-        file_data = input_data["file_data"]
+        file_data = "input_file.nii.gz"
         filename = input_data["filename"]
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -24,10 +24,7 @@ def handler(job):
                 result_data = base64.b64encode(f.read()).decode('utf-8')
             
             return {
-                "output": {
-                    "file_data": result_data,
-                    "filename": output_filename
-                }
+                "file_data": result_data
             }
             
     except Exception as e:
