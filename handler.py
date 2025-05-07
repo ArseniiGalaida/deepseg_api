@@ -7,7 +7,7 @@ from process_nifti import process_nifti_file
 def handler(job):
     try:
         input_data = job["input"]
-        file_data = input_data["filename"]
+        file_data = input_data["file_data"]
         filename = "input_file.nii.gz"
 
         with tempfile.TemporaryDirectory() as temp_dir:
