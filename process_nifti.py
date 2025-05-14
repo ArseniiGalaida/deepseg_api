@@ -48,7 +48,9 @@ def process_nifti_file(input_path, output_path):
         pr = model.predict(tmp_input)[0]
         pr = pr.reshape((config['output_height'], config['output_width'], config['n_classes'])).argmax(axis=2)
 
-        pred_data[:, :, n] = resize(pr, (input_data.shape[0], input_data.shape[1]), interpolation=INTER_NEAREST)
+        resized_pr = resize(pr, (input_data.shape[1], input_data.shape[0]), interpolation=INTER_NEAREST)
+
+        pred_data[:, :, n] = resized_pr
 
     input_img.header.set_data_dtype(np.uint8)
     pred_data = pred_data.astype(np.uint8)
